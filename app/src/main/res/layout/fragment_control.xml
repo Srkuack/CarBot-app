@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#CC222222">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Velocidad -->
+        <SeekBar
+            android:id="@+id/seekBar_speed"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="2000"
+            android:progress="1000" />
+
+        <!-- Dirección -->
+        <SeekBar
+            android:id="@+id/seekBar_steering"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="180"
+            android:progress="90"
+            android:layout_marginTop="12dp" />
+
+        <!-- Direccional Izquierda -->
+        <ToggleButton
+            android:id="@+id/toggleButtonBlinkL"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textOn="← Izq ON"
+            android:textOff="← Izq OFF"
+            android:textColor="@android:color/white"
+            android:backgroundTint="@android:color/holo_blue_dark"
+            android:layout_marginTop="12dp" />
+
+        <!-- Direccional Derecha -->
+        <ToggleButton
+            android:id="@+id/toggleButtonBlinkR"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textOn="Der → ON"
+            android:textOff="Der → OFF"
+            android:textColor="@android:color/white"
+            android:backgroundTint="@android:color/holo_blue_dark"
+            android:layout_marginTop="8dp" />
+
+        <!-- E-STOP -->
+        <ToggleButton
+            android:id="@+id/button_stop"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textOn="E-STOP"
+            android:textOff="E-STOP"
+            android:textColor="@android:color/white"
+            android:backgroundTint="@android:color/holo_red_dark"
+            android:layout_marginTop="16dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginTop="12dp">
+
+            <Button
+                android:id="@+id/button_connect"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="Conectar (MasterChooser)" />
+
+            <Space
+                android:layout_width="12dp"
+                android:layout_height="1dp" />
+
+            <Button
+                android:id="@+id/button_disconnect"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:text="Desconectar" />
+        </LinearLayout>
+
+    </LinearLayout>
+</ScrollView>
