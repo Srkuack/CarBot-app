@@ -43,6 +43,17 @@ class ModelCarActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_model_car)
 
+        findViewById<ToggleButton>(R.id.button_stop).setOnCheckedChangeListener { _, isChecked ->
+            // 1/0 + luces desde callPublishStopStart
+            callPublishStopStart(isChecked)
+
+            // UI/seguridad local
+            sbSpeed?.progress = 1000  // 0
+            sbSteer?.progress = 90    // centro
+            RosManager.setVelocity(0.0, 0.0)
+        }
+
+
         // Cargar último master
         masterUri = prefs.getString("master_uri", null)
 
@@ -93,14 +104,6 @@ class ModelCarActivity : AppCompatActivity() {
         })
 
         // E-STOP: regresa sliders a 0/90 y manda stop real
-        stopBtn?.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                sbSpeed?.progress = 1000  // 0
-                sbSteer?.progress = 90    // centro
-                RosManager.setVelocity(0.0, 0.0)
-                RosManager.publishSteering(90.toShort())
-            }
-        }
 
         blinkL?.setOnCheckedChangeListener { _, on ->
             RosManager.publishBlinker(if (on) "left_on" else "left_off")
@@ -164,18 +167,27 @@ class ModelCarActivity : AppCompatActivity() {
         RosManager.publishSteering(progress.toShort())
     }
 
-    fun callPublishStopStart(stop: Boolean) {
-        isStopped = stop
-        if (stop) {
-            RosManager.setVelocity(0.0, 0.0)
-        } else {
-            callPublishSpeed(lastSpeed)
-            callPublishSteering(lastSteer)
-        }
-    }
 
     fun callPublishBlinkerLight(mode: String) {
+        android.util.Log.d("BLINK", "Activity relay=[$mode]")
         RosManager.publishBlinker(mode)
+    }
+
+    fun callPublishStopStart(stop: Boolean) {
+        // 1) Señal principal (Int16: 1/0)
+        RosManager.publishStopStart(stop)
+
+        // 2) Seguridad de motores
+        RosManager.setVelocity(0.0, 0.0)
+
+        // 3) Luces de freno por compatibilidad
+        if (stop) {
+            // al activar E-Stop, prende freno
+            RosManager.publishBlinker("stop")
+        } else {
+            // al liberar E-Stop, apaga freno/intermitentes
+            RosManager.publishBlinker("diL")
+        }
     }
 
     private fun toast(msg: String) =
