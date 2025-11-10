@@ -12,6 +12,7 @@ import org.ros.node.NodeMainExecutor;
 import org.ros.node.DefaultNodeMainExecutor;
 import org.ros.node.topic.Publisher;
 
+
 import java.net.URI;
 
 public class RosManager {
@@ -57,6 +58,11 @@ public class RosManager {
         if (ioNode != null) ioNode.publishBlinker(mode);
     }
 
+    public static void publishStopStart(boolean stop) {
+        if (ioNode != null) ioNode.publishStopStart(stop);
+        else android.util.Log.w("ESTOP", "io==null (¿no conectado al master todavía?)");
+    }
+
     // ==========================================================
     //                Nodo interno que publica a ROS
     // ==========================================================
@@ -66,11 +72,15 @@ public class RosManager {
 
         private Publisher<std_msgs.Int16>  speedPub;     // /manual_control/speed
         private Publisher<std_msgs.Int16>  steeringPub;  // /manual_control/steering
-        private Publisher<std_msgs.String> blinkerPub;   // /led
+        private Publisher<std_msgs.String> lightsPub;
+        private Publisher<std_msgs.Int16> stopStartPub;
+
+
 
         private static final String TOPIC_SPEED    = "/manual_control/speed";
         private static final String TOPIC_STEERING = "/manual_control/steering";
-        private static final String TOPIC_BLINKER  = "/led";
+        private static final String TOPIC_LIGHTS = "/manual_control/lights";
+        private static final String TOPIC_STOPSTART = "/manual_control/stop_start";
 
         @Override public GraphName getDefaultNodeName() {
             return GraphName.of("android/ros_manager_io");
@@ -82,7 +92,9 @@ public class RosManager {
 
             speedPub    = node.newPublisher(TOPIC_SPEED,    std_msgs.Int16._TYPE);
             steeringPub = node.newPublisher(TOPIC_STEERING, std_msgs.Int16._TYPE);
-            blinkerPub  = node.newPublisher(TOPIC_BLINKER,  std_msgs.String._TYPE);
+            lightsPub = connectedNode.newPublisher(TOPIC_LIGHTS, std_msgs.String._TYPE);
+            stopStartPub = connectedNode.newPublisher(TOPIC_STOPSTART, std_msgs.Int16._TYPE);
+
         }
 
         @Override public void onShutdown(Node n) {}
@@ -120,12 +132,30 @@ public class RosManager {
             steeringPub.publish(m);
         }
 
-        /** Publica el estado de blinkers. */
+
+        // La UI puede mandarte "Lle","Lri","Lstop" o cosas como "left/right/off/hazard".
+        // Normalizamos SIEMPRE a los tokens originales que sí funcionaban: Lle/Lri/LdiL/Lstop.
+
         public void publishBlinker(String mode) {
-            if (blinkerPub == null) return;
-            std_msgs.String b = blinkerPub.newMessage();
-            b.setData(mode);
-            blinkerPub.publish(b);
+            if (lightsPub == null || mode == null) return;
+
+            String m = mode.trim().toLowerCase();
+            String out;
+            if (m.equals("left_on")  || m.equals("le") ) out = "le";
+            else if (m.equals("right_on") || m.equals("ri")) out = "ri";
+            else if (m.equals("stop") || m.equals("lstop")) out = "stop";
+            else out = "diL"; // left_off/right_off/otros -> apagar
+
+            android.util.Log.d("BLINK", "ROS OUT=[" + out + "]");
+            std_msgs.String msg = lightsPub.newMessage();
+            msg.setData(out);
+            lightsPub.publish(msg);
+        }
+        void publishStopStart(boolean stop) {
+            if (stopStartPub == null) return;
+            std_msgs.Int16 msg = stopStartPub.newMessage();
+            msg.setData((short) (stop ? 1 : 0));   // 1 = E-Stop, 0 = liberar
+            stopStartPub.publish(msg);
         }
     }
 }

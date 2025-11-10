@@ -20,11 +20,20 @@ class ControlFragment : Fragment() {
     ): View? = inflater.inflate(R.layout.fragment_control, container, false)
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
         val stop  = view.findViewById<ToggleButton>(R.id.button_stop)
         val sbSpeed = view.findViewById<SeekBar>(R.id.seekBar_speed)
         val sbSteer = view.findViewById<SeekBar>(R.id.seekBar_steering)
-        val blL   = view.findViewById<ToggleButton>(R.id.toggleButtonBlinkL)
-        val blR   = view.findViewById<ToggleButton>(R.id.toggleButtonBlinkR)
+        val tbLeft  = view.findViewById<ToggleButton>(R.id.toggleButtonBlinkL)
+        val tbRight = view.findViewById<ToggleButton>(R.id.toggleButtonBlinkR)
+
+
+        fun send(mode: String) {
+            android.util.Log.d("BLINK", "Fragment send=[$mode]")
+            (activity as? ModelCarActivity)?.callPublishBlinkerLight(mode)
+        }
+
+        var squelch = false
 
         // Valores seguros por si el XML no trae max/progress
         if (sbSpeed.max != 2000) sbSpeed.max = 2000
@@ -52,33 +61,29 @@ class ControlFragment : Fragment() {
         })
 
         // ===== E-STOP: usa exactamente tu firma callPublishStopStart(int)
-        stop.setOnCheckedChangeListener { _, isChecked ->
-            host.callPublishStopStart(if (isChecked) true else false)
-            // opcional: cuando haces STOP, re-centra sliders
+
+
+        tbLeft.setOnCheckedChangeListener { _, isChecked ->
+            if (squelch) return@setOnCheckedChangeListener
             if (isChecked) {
-                sbSpeed.progress = 1000
-                sbSteer.progress = 90
+                squelch = true
+                if (tbRight.isChecked) tbRight.isChecked = false
+                squelch = false
+                send("le")          // ← izquierda
+            } else if (!tbRight.isChecked) {
+                send("diL")         // ← apagar si ambos quedan OFF
             }
         }
 
-        // ===== Direccionales: mismos tokens que ya tienes ("Lle","Lri","Lstop")
-        // Exclusividad simple entre los ToggleButton (no RadioGroup)
-        blL.setOnCheckedChangeListener { _, on ->
-            if (on) {
-                if (blR.isChecked) blR.isChecked = false
-                host.callPublishBlinkerLight("Lle")
-            } else {
-                // sólo envía stop si ninguno quedó activo
-                if (!blR.isChecked) host.callPublishBlinkerLight("Lstop")
-            }
-        }
-
-        blR.setOnCheckedChangeListener { _, on ->
-            if (on) {
-                if (blL.isChecked) blL.isChecked = false
-                host.callPublishBlinkerLight("Lri")
-            } else {
-                if (!blL.isChecked) host.callPublishBlinkerLight("Lstop")
+        tbRight.setOnCheckedChangeListener { _, isChecked ->
+            if (squelch) return@setOnCheckedChangeListener
+            if (isChecked) {
+                squelch = true
+                if (tbLeft.isChecked) tbLeft.isChecked = false
+                squelch = false
+                send("ri")          // ← derecha
+            } else if (!tbLeft.isChecked) {
+                send("diL")         // ← apagar
             }
         }
     }
